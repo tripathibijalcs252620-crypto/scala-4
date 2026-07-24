@@ -6,57 +6,40 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object bijalpractical15 {
-
   def main(args: Array[String]): Unit = {
 
-    // Read Apple stock data
-    val reader = CSVReader.open(new File("stock market.csv"))
+    // Read CSV file
+    val reader = CSVReader.open(new File("DailyDelhiClimateTest.csv"))
     val data = reader.allWithHeaders()
     reader.close()
 
-    // Date format
+    // Parse date and mean temperature
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    // Parse Date and Close Price
     val parsedData = data.flatMap { row =>
       try {
-        val date = LocalDate.parse(row("Date"), dateFormatter)
-        val close = row("Close").toDouble
-        Some((date, close))
+        val date = LocalDate.parse(row("date"), dateFormatter)
+        val meanTemp = row("meantemp").toDouble
+        Some((date, meanTemp))
       } catch {
-        case _: Throwable => None
+        case _: Throwable => None // Skip invalid rows
       }
     }.sortBy(_._1)
 
-    // X-axis (Day Index)
-    val x = DenseVector(
-      (0 until parsedData.length).map(_.toDouble).toArray
-    )
+    // Prepare X (time index) and Y (mean temperature)
+    val x = DenseVector((0 until parsedData.length).map(_.toDouble).toArray)
+    val y = DenseVector(parsedData.map(_._2).toArray)
 
-    // Y-axis (Close Price)
-    val y = DenseVector(
-      parsedData.map(_._2).toArray
-    )
-
-    // Create Figure
-    val fig = Figure("Apple Stock Closing Price")
-
+    // Plot graph
+    val fig = Figure("Daily Climate Time Series")
     val plt = fig.subplot(0)
 
-    // Draw Line Plot
-    plt += plot(
-      x,
-      y,
-      name = "Close Price",
-      colorcode = "blue"
-    )
+    plt += plot(x, y, name = "Mean Temperature", colorcode = "blue")
 
-    // Labels
     plt.xlabel = "Time (Days)"
-    plt.ylabel = "Close Price"
-    plt.title = "Apple (AAPL) Closing Price Over Time"
+    plt.ylabel = "Mean Temperature (°C)"
+    plt.title = "Daily Mean Temperature Over Time"
 
-    // Display Plot
     fig.refresh()
   }
 }
